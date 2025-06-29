@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}
+Home Page
+{% endblock %}
+
+{% block content %}
+
+    <div class="chat-container">
+        <!-- Form Komentar (Di atas) -->
+        <div class="comment-form">
+            <form method="POST">
+                <div class="mb-2">
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Masukkan Nama..." required>
+                </div>
+                <div class="mb-2">
+                    <textarea id="comment" name="comment" class="form-control" placeholder="Tulis komentar..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-kirim">Kirim</button>
+            </form>
+        </div>
+
+        <!-- Kotak Komentar (Di bawah) -->
+        <div class="chat-box" id="chatBox">
+            {% for comment in comments %}
+            <div>
+                <div class="comment-name">{{ comment.username }}</div>
+                <div class="bubble received">{{ comment.comment }}</div>
+            </div>
+            {% else %}
+            <div class="text-center text-muted">Tidak ada komentar.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock %}

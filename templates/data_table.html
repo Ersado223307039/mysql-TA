@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Harga Pangan Terkini</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .table-responsive {
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        .table thead th {
+            background-color: #3498db;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        .table tbody tr:hover {
+            background-color: #f1f9ff;
+        }
+        .badge {
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .price-cell {
+            font-weight: 500;
+            text-align: right;
+        }
+        .date-col {
+            white-space: nowrap;
+        }
+        .commodity-header {
+            background-color: #2980b9 !important;
+            color: white;
+            text-align: center;
+        }
+        .last-updated {
+            text-align: right;
+            font-style: italic;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        .toggle-btn {
+            display: block;
+            width: 200px;
+            margin: 0 auto 20px;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .toggle-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        .toggle-btn i {
+            margin-left: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Data Harga Pangan Terkini</h1>
+        <div class="last-updated">
+           
+        </div>
+        
+        <button id="toggleTable" class="toggle-btn">
+            <span id="btnText">Tampilkan Data</span>
+            <i id="btnIcon" class="fas fa-chevron-down"></i>
+        </button>
+        
+        <div id="dataTableContainer" class="hidden">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th class="date-col">Tanggal</th>
+                            {% for item in table_data %}
+                                <th>{{ item.nama|capitalize }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if table_data and table_data[0].rows %}
+                            {% for i in range(table_data[0].rows|length) %}
+                                <tr>
+                                    <td class="date-col">{{ table_data[0].rows[i][0] }}</td>
+                                    {% for item in table_data %}
+                                        <td class="price-cell">
+                                            Rp{{ "{:,.0f}".format(item.rows[i][1]|float) }}
+                                            {% if i > 0 %}
+                                                {% set change = item.rows[i][1]|float - item.rows[i-1][1]|float %}
+                                                {% if change > 0 %}
+                                                    <span class="badge bg-danger float-end">+{{ "{:,.0f}".format(change) }}</span>
+                                                {% elif change < 0 %}
+                                                    <span class="badge bg-success float-end">{{ "{:,.0f}".format(change) }}</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="{{ table_data|length + 1 }}" class="text-center">Tidak ada data tersedia</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4">
+                <div class="alert alert-info">
+                    <strong>Keterangan:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Angka dalam <span class="badge bg-danger">merah</span> menunjukkan kenaikan harga dari hari sebelumnya</li>
+                        <li>Angka dalam <span class="badge bg-success">hijau</span> menunjukkan penurunan harga dari hari sebelumnya</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggleTable');
+            const dataTable = document.getElementById('dataTableContainer');
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            
+            toggleBtn.addEventListener('click', function() {
+                // Toggle table visibility
+                dataTable.classList.toggle('hidden');
+                
+                // Change button text and icon
+                if (dataTable.classList.contains('hidden')) {
+                    btnText.textContent = 'Tampilkan Data';
+                    btnIcon.className = 'fas fa-chevron-down';
+                } else {
+                    btnText.textContent = 'Sembunyikan Data';
+                    btnIcon.className = 'fas fa-chevron-up';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

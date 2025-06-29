@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Prediksi Harga Komoditas{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome untuk ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Styling Navbar */
+        .navbar {
+            background: linear-gradient(45deg, #4a90e2, #145a32);
+            padding: 15px;
+            width: 100%;
+        }
+        .navbar-brand img {
+            width: 12%;
+            height: 12%;
+            margin-right: 0px;
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .navbar-brand-subtitle {
+            font-size: 0.7rem;
+            font-weight: 400;
+            opacity: 0.9;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .navbar-nav .nav-link {
+            font-size: 1rem;          /* Ukuran teks menu */
+            display: flex;
+            align-items: center;      /* Biar ikon sejajar tengah */
+            gap: 6px;                 /* Jarak antara ikon dan teks */
+            padding-top: 10px;        /* Tambahkan padding agar sejajar dengan judul */
+            padding-bottom: 10px;
+        }
+
+        .navbar-nav .nav-link i {
+            font-size: 1.25rem;       /* Ukuran ikon, bisa disesuaikan */
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+        .nav-link:hover {
+            color: #ffcc00 !important;
+        }
+        .profile-icon {
+            color: white;
+            font-size: 1.5rem;
+            transition: 0.3s;
+        }
+        .profile-icon:hover {
+            color: #ffcc00;
+        }
+        /* Styling Body */
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100%;
+        }
+        /* Styling Footer */
+        footer {
+            background: linear-gradient(45deg, #4a90e2, #145a32);
+            color: white;
+            text-align: center;
+            padding: 15px;
+            width: 100%;
+            position: relative;
+            bottom: 0;
+            margin-top: 30px; /* Tambahkan jarak atas */
+        }
+        .content-container {
+            width: 80%;
+            max-width: 900px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            width: 100%;
+            margin-top: 20px;
+        }
+        .prediction-text {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .table-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .table-wrapper {
+            max-height: 400px; /* Scroll jika melebihi 400px */
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .table th {
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .chat-container {
+            width: 600px;
+            margin: 20px auto; /* Tambahkan margin atas */
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            overflow: hidden;
+        }
+        .comment-form {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            background: white;
+        }
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: calc(80vh - 170px);
+        }
+        .bubble {
+            max-width: fit-content; /* Lebar sesuai teks */
+            min-width: 60px; /* Tidak terlalu kecil */
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            position: relative;
+            word-wrap: break-word;
+            white-space: pre-wrap; /* Agar teks panjang tetap rapi */
+        }
+        .sent {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+        .sent::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            right: -10px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #007bff;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+        }
+        .received {
+            align-self: flex-start;
+            background-color: #e0e0e0;
+            color: black;
+            border-bottom-left-radius: 2px;
+        }
+        .received::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: -10px;
+            width: 0;
+            height: 0;
+            border-right: 10px solid #e0e0e0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+        }
+        .comment-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        textarea {
+            resize: none;
+            height: 120px;
+        }
+        .btn-kirim {
+            width: 100px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            height: 300px; 
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar Full Width -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid">
+        <!-- Logo dan Nama Aplikasi di kiri -->
+        <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+        <div class="d-flex flex-column ms-2">
+            <span class="navbar-brand-title">PREDIKSI HARGA</span>
+            <span class="navbar-brand-subtitle">KOMODITAS MAKANAN POKOK KABUPATEN MADIUN</span>
+        </div>
+    </a>
+
+        <!-- Tombol Toggle untuk Mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Menu di kanan -->
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav d-flex align-items-center gap-3">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('predict') }}"><i class="fas fa-home"></i> Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('record') }}"><i class="fas fa-clipboard-list"></i> Record</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('history') }}"><i class="fas fa-history"></i> History</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('akurasi') }}"><i class="fas fa-chart-line"></i> Akurasi</a>
+                </li>
+              
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Konten Utama -->
+{% block content %}{% endblock %}
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p class="mb-0">&copy; 2025 My Dashboard. All rights reserved.</p>
+    </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

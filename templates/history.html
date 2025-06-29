@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="table-container">
+        <h2 class="text-center mb-4">Riwayat Prediksi Harga</h2>
+
+        {% if error_message %}
+            <div class="alert alert-danger">{{ error_message }}</div>
+        {% else %}
+            {% if predictions_data %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" style="text-align: center;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Komoditas</th>
+                            <th>Tanggal Prediksi</th>
+                            <th>Harga Prediksi</th>
+                            <th>Waktu Dibuat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in predictions_data %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ row['komoditas'] }}</td>
+                            <td>
+                                {% if row['tanggal'] %}
+                                    {{ row['tanggal'].strftime('%d-%m-%Y') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row['nilai_prediksi'] %}
+                                    Rp.{{ "{:,.0f}".format(row['nilai_prediksi']|float).replace(",", ".") }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row['created_at'] %}
+                                    {{ row['created_at'].strftime('%d-%m-%Y %H:%M') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <div class="alert alert-info">Tidak ada data prediksi</div>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

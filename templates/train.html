@@ -1,0 +1,182 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Training Form Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-gear-wide-connected me-2"></i>Training Model</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" class="row g-3">
+                <div class="col-md-8">
+                    <label for="model_name" class="form-label">Nama Model</label>
+                    <input type="text" class="form-control" id="model_name" name="model_name" 
+                           placeholder="Contoh: model_komoditas_2024" required>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-custom w-100">
+                        <i class="bi bi-play-circle me-2"></i>Mulai Training
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Card (always visible) -->
+    <div class="card mb-4">
+        <div class="card-header {% if mape_scores %}bg-success{% else %}bg-secondary{% endif %} text-white">
+            <h4 class="mb-0"><i class="bi bi-check-circle me-2"></i>Hasil Training</h4>
+        </div>
+        <div class="card-body">
+            <!-- Original Data Row Counts -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-database me-2"></i>Total Data</h5>
+                            <p class="display-6">{{ data_counts.total if data_counts else 0 }}</p>
+                            <h5 class="card-title"><i class="bi bi-calendar-date me-2"></i>Tanggal Dataset</h5>
+                            <p class="display-6">
+                                {% if data_counts and data_counts.first_date != 0 %}
+                                    {{ data_counts.first_date.strftime('%d/%m/%Y') }} - {{ data_counts.last_date.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    00/00/00 - 00/00/00
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-file-earmark-bar-graph me-2"></i>Data Training</h5>
+                            <p class="display-6">{{ data_counts.training if data_counts else 0 }}</p>
+                            <small class="text-muted">
+                                {% if data_counts %}
+                                80% dari {{ data_counts.total }} baris
+                                {% else %}
+                                Menunggu training...
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-clipboard-data me-2"></i>Data Testing</h5>
+                            <p class="display-6">{{ data_counts.testing if data_counts else 0 }}</p>
+                            <small class="text-muted">
+                                {% if data_counts %}
+                                20% dari {{ data_counts.total }} baris
+                                {% else %}
+                                Menunggu training...
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAPE Results Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width: 30%"><i class="bi bi-basket me-2"></i>Komoditas</th>
+                            <th style="width: 25%"><i class="bi bi-speedometer2 me-2"></i>MAPE (%)</th>
+                            <th style="width: 45%"><i class="bi bi-info-circle me-2"></i>Interpretasi Akurasi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if mape_scores %}
+                            {% for komoditas, mape in mape_scores.items() %}
+                            <tr>
+                                <td class="align-middle">
+                                    <strong>{{ komoditas|upper }}</strong>
+                                </td>
+                                <td class="align-middle">
+                                    <span class="fw-bold {% if mape < 5 %}text-success
+                                                        {% elif mape < 10 %}text-primary
+                                                        {% elif mape < 20 %}text-warning
+                                                        {% else %}text-danger{% endif %}">
+                                        {{ mape }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress mb-2" style="height: 20px;">
+                                        <div class="progress-bar {% if mape < 5 %}bg-success
+                                                              {% elif mape < 10 %}bg-primary
+                                                              {% elif mape < 20 %}bg-warning
+                                                              {% else %}bg-danger{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ 100 - mape }}%" 
+                                             aria-valuenow="{{ 100 - mape }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small>
+                                        {% if mape < 5 %}
+                                        <span class="text-success">Sangat Akurat (MAPE < 5%)</span>
+                                        {% elif mape < 10 %}
+                                        <span class="text-primary">Akurat (MAPE 5-10%)</span>
+                                        {% elif mape < 20 %}
+                                        <span class="text-warning">Cukup Akurat (MAPE 10-20%)</span>
+                                        {% else %}
+                                        <span class="text-danger">Kurang Akurat (MAPE > 20%)</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    <i class="bi bi-info-circle fs-4"></i><br>
+                                    Data hasil training akan muncul di sini setelah proses training selesai
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="alert alert-info mt-4">
+                <h5><i class="bi bi-lightbulb me-2"></i>Keterangan</h5>
+                <ul class="mb-0">
+                    {% if data_counts %}
+                        <li><strong>Pembagian Data:</strong> Menggunakan {{ data_counts.training }} baris pertama (80%) untuk training dan {{ data_counts.testing }} baris terakhir (20%) untuk testing</li>
+                        <li><strong>Total Baris Data:</strong> {{ data_counts.total }} (sebelum pemrosesan fitur)</li>
+                        {% if request.form.model_name %}
+                        <li><strong>Model Tersimpan di:</strong> <code>static/model/{{ request.form.model_name }}.pkl</code></li>
+                        {% endif %}
+                    {% else %}
+                        <li>Training akan menggunakan 80% data pertama untuk training dan 20% data terakhir untuk testing</li>
+                        <li>Hasil training termasuk metrik akurasi (MAPE) akan ditampilkan setelah proses selesai</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 4px;
+    }
+    .card-header {
+        font-weight: 600;
+    }
+    .display-6 {
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+    .card-title {
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

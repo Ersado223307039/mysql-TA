@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Form Prediksi -->
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3">
+                <h4 class="text-center">Prediksi Harga Komoditas</h4>
+                
+                {% if error %}
+                <div class="alert alert-danger">
+                    {{ error }}
+                </div>
+                {% endif %}
+                
+                <form method="post" id="predictionForm">
+                    <div class="row g-3">
+                        <!-- Pilih Model -->
+                        <div class="col-12">
+                            <div class="bg-white p-3 shadow-sm mb-3 d-flex align-items-center"
+                                style="border-left: 5px solid #4e73df; border-radius: 10px;">
+                                <i class="fas fa-chart-line me-3" style="font-size: 30px; color: #4e73df;"></i>
+                                <div class="flex-grow-1">
+                                    <h6 class="text-primary fw-bold">Pilih Model</h6>
+                                    <select id="selected_model" name="selected_model" class="form-select" >
+                                        {% for model in model_files %}
+                                             <option value="{{ model }}" 
+                                                {% if model == selected_model %}selected{% endif %}>
+                                                {{ model|replace('.pkl', '') }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pilih Komoditas -->
+                        <div class="col-12">
+                            <div class="bg-white p-3 shadow-sm mb-3 d-flex align-items-center"
+                                style="border-left: 5px solid #1cc88a; border-radius: 10px;">
+                                <i class="fas fa-seedling me-3" style="font-size: 30px; color: #1cc88a;"></i>
+                                <div class="flex-grow-1">
+                                    <h6 class="text-success fw-bold">Pilih Komoditas</h6>
+                                    <select id="selected_komoditas" name="selected_komoditas" class="form-select" >
+                                        {% for komoditas in komoditas_list %}
+                                            <option value="{{ komoditas }}" 
+                                                {% if komoditas == selected_komoditas %}selected{% endif %}>
+                                                {{ komoditas }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pilih Tanggal -->
+                        <div class="col-12">
+                            <div class="bg-white p-3 shadow-sm mb-3 d-flex align-items-center"
+                                style="border-left: 5px solid #9370DB; border-radius: 10px;">
+                                <i class="fas fa-calendar-alt me-3" style="font-size: 30px; color: #9370DB;"></i>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold" style="color: #9370DB;">Pilih Tanggal</h6>
+                                    <input type="date" id="selected_date" name="selected_date" required 
+                                        class="form-control"
+                                        value="{{ selected_date if selected_date else '' }}"
+                                         min="{{ ''|current_date }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Prediksi -->
+                    <div class="row justify-content-center mt-4">
+                        <div class="col-12 text-center">
+                            <button type="submit" class="btn btn-primary w-100" id="predictButton">
+                                <span id="predictText">Prediksi</span>
+                                <span id="predictSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card Hasil Prediksi -->
+        <div class="col-md-8">
+            <div class="card shadow-sm p-3 mb-4">
+                <h4 class="text-start ps-3 mt-2">Hasil Prediksi untuk {{ selected_komoditas if selected_komoditas else "Komoditas" }}</h4>
+                <p class="text-start ps-3 mt-2">
+                    {% if predictions and selected_komoditas %}
+                        <p class="text-start ps-3 mt-2">
+                            Prediksi harga {{ selected_komoditas }} pada tanggal <b>{{ selected_date_formatted }}</b>:    
+                            <span class="fs-4 fw-bold text-success">{{ predictions[0] | format_currency}}</span>
+                        </p>
+                    {% else %}
+                        <span class="text-danger">Silakan pilih model, komoditas, dan tanggal untuk melihat prediksi.</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Card Grafik Prediksi -->
+            <div class="card shadow-sm p-3">
+                <h4 class="text-center">Grafik Prediksi Harga {{ selected_komoditas if selected_komoditas else "Komoditas" }}</h4>
+                {% if predictions %}
+                    <canvas id="predictionChart"></canvas>
+                {% else %}
+                    <p class="text-center text-muted">Grafik akan muncul setelah prediksi dilakukan.</p>
+                {% endif %}
+
+                <div class="text-center mt-3">
+                     {% if predictions %}
+                    <a id="showActualDataBtn" class="btn btn-info mb-3" href="{{ url_for('fetch_data') }}">
+                        <i class="fas fa-database me-2"></i>Tampilkan Data Aktual
+                    </a>
+                     {% endif %}
+                </div>
+
+                <!-- Tombol Feedback dan Prediksi Lagi -->
+                <div class="d-flex justify-content-between mt-3">
+                    {% if predictions %}
+                        <button id="feedbackButton" class="btn btn-outline-secondary">Feedback</button>
+                        <button id="resetButton" class="btn btn-outline-primary">Prediksi Lagi</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card Form Feedback (Awalnya Tersembunyi) -->
+        <div id="feedbackFormCard" class="card shadow-sm p-3 mt-4" style="display: none;">
+            <h4 class="text-center">Feedback</h4>
+            <form id="feedbackForm">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Nama</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="comment" class="form-label">Komentar</label>
+                    <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
+                </div>
+                <div class="text-center d-flex justify-content-between">
+                    <button type="button" id="cancelFeedbackBtn" class="btn btn-outline-secondary">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Kirim
+                    </button>
+                </div>
+            </form>
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add SweetAlert JS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Script Chart.js -->
+{% if predictions %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Inisialisasi data chart
+    var predictions = {{ predictions|tojson }}.map(Math.round);
+    var startDate = new Date("{{ selected_date }}");
+    var dateLabels = predictions.map((_, i) => {
+        let date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    });
+
+    // Buat chart
+    var ctx = document.getElementById('predictionChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dateLabels,
+            datasets: [{
+                label: 'Prediksi Harga {{ selected_komoditas }}',
+                data: predictions,
+                fill: true,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { 
+                    grid: { display: false },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: { 
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp' + value.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Harga: Rp' + context.raw.toLocaleString('id-ID');
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Sembunyikan tombol Prediksi setelah prediksi dilakukan
+    document.getElementById('predictButton').style.display = 'none';
+
+    // Tampilkan tombol Feedback setelah prediksi dilakukan
+    document.getElementById('feedbackButton').style.display = 'block';
+
+    // Tambahkan event listener untuk tombol Feedback
+    document.getElementById('feedbackButton').addEventListener('click', function() {
+        document.getElementById('feedbackFormCard').style.display = 'block';
+        this.style.display = 'none';
+    });
+
+    // Tambahkan event listener untuk tombol Prediksi Lagi
+    document.getElementById('resetButton').addEventListener('click', function() {
+        window.location.href = "{{ url_for('predict') }}";
+    });
+
+    document.getElementById('cancelFeedbackBtn').addEventListener('click', function() {
+        document.getElementById('feedbackFormCard').style.display = 'none';
+        document.getElementById('feedbackForm').reset();
+        document.getElementById('feedbackButton').style.display = 'block';
+    });
+
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        fetch("{{ url_for('comment') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            Swal.fire({
+                title: 'Sukses!',
+                text: data.message,
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+            document.getElementById('feedbackFormCard').style.display = 'none';
+            document.getElementById('feedbackButton').style.display = 'block';
+            document.getElementById('feedbackForm').reset();
+        })
+        .catch(error => {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Terjadi kesalahan saat mengirim feedback.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        });
+    });
+
+    // Validasi form sebelum submit
+    document.getElementById('predictionForm').addEventListener('submit', function() {
+        // Tampilkan loading spinner
+        document.getElementById('predictText').classList.add('d-none');
+        document.getElementById('predictSpinner').classList.remove('d-none');
+    });
+</script>
+{% endif %}
+
+<script>
+    // Validasi client-side sebelum form dikirim
+    document.getElementById('predictionForm').addEventListener('submit', function(e) {
+        const selectedDate = new Date(document.getElementById('selected_date').value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Error!',
+                text: 'Tanggal prediksi tidak boleh di masa lalu',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return false;
+        }
+        
+        if (!document.getElementById('selected_model').value) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Error!',
+                text: 'Silakan pilih model terlebih dahulu',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return false;
+        }
+        
+        if (!document.getElementById('selected_komoditas').value) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Error!',
+                text: 'Silakan pilih komoditas terlebih dahulu',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return false;
+        }
+    });
+</script>
+
+<style>
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: #495057;
+        border-bottom: 3px solid transparent;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        background-color: transparent;
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+    .badge {
+        font-weight: 500;
+        padding: 5px 8px;
+    }
+    .delete-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}

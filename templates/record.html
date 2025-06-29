@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+    <div class="table-container">
+        <h2 class="text-center mb-4">Data Harga Komoditas</h2>
+
+        <!-- Form untuk memilih tanggal -->
+        <form method="POST" class="mb-3" onsubmit="return validateDates()">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">Tanggal Awal:</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" 
+                           value="{{ start_date }}" min="2018-01-01" max="2024-12-31" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tanggal Akhir:</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" 
+                           value="{{ end_date }}" min="2018-01-01" max="2024-12-31" required>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i> Filter</button>
+                </div>
+            </div>
+        </form>
+
+        {% if error_message %}
+            <div class="alert alert-danger">{{ error_message }}</div>
+        {% else %}
+            <div class="table-wrapper">
+                <table class="table table-striped table-hover table-bordered">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th><i class="fas fa-calendar"></i> Waktu</th>
+                            <th><i class="fas fa-box"></i> Beras</th>
+                            <th><i class="fas fa-egg"></i> Telur</th>
+                            <th><i class="fas fa-cube"></i> Gula</th>
+                            <th><i class="fas fa-drumstick-bite"></i> Daging</th>
+                            <th><i class="fas fa-pepper-hot"></i> Cabai</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                        <tr>
+                            <td class="text-center">{{ loop.index }}</td>
+                            <td class="text-center">{{ row["waktu"] }}</td>
+                            <td class="text-right">Rp {{ "{:,.0f}".format(row["beras"]) }}</td>
+                            <td class="text-right">Rp {{ "{:,.0f}".format(row["telur"]) }}</td>
+                            <td class="text-right">Rp {{ "{:,.0f}".format(row["gula"]) }}</td>
+                            <td class="text-right">Rp {{ "{:,.0f}".format(row["daging"]) }}</td>
+                            <td class="text-right">Rp {{ "{:,.0f}".format(row["cabai"]) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-center mt-4">
+                <button id="showGraphButton" class="btn btn-success">
+                    <i class="fas fa-chart-line"></i> Tampilkan Grafik
+                </button>
+            </div>
+            
+            
+
+            <div id="graphSection" class="mt-5" style="display: none;">
+                <h3 class="text-center mb-4">Visualisasi Harga Komoditas</h3>
+                <div class="row justify-content-center">
+                    {% for graph in graphs %}
+                    <div class="col-md-9 mb-4 d-flex justify-content-center">
+                        <div class="card h-100" style="width: 100%;">
+                            <div class="card-body">
+                                {{ graph|safe }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function validateDates() {
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+
+        if (startDate > endDate) {
+            alert("Tanggal akhir tidak boleh lebih kecil dari tanggal awal.");
+            return false;
+        }
+        return true;
+    }
+
+    document.getElementById('start_date').value = "{{ start_date }}";
+    document.getElementById('end_date').value = "{{ end_date }}";
+
+    document.getElementById('showGraphButton').addEventListener('click', function() {
+        document.getElementById('graphSection').style.display = 'block';
+        this.style.display = 'none'; // Sembunyikan tombol setelah diklik
+    });
+</script>
+
+<style>
+    .card {
+        overflow: hidden;
+        position: relative;
+    }    
+
+{% endblock %}

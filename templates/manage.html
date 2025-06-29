@@ -1,0 +1,357 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card mb-4 shadow">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-database-gear me-2"></i>Manajemen Data</h4>
+                <div>
+                    <a href="{{ url_for('manage_data') }}" class="btn btn-sm btn-light">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <ul class="nav nav-tabs mb-4" id="dataTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="prediction-tab" data-bs-toggle="tab" 
+                            data-bs-target="#prediction-data" type="button" role="tab">
+                        <i class="bi bi-graph-up me-1"></i> Data Prediksi
+                        <span class="badge bg-secondary ms-1">{{ data_prediksi|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="feedback-tab" data-bs-toggle="tab" 
+                            data-bs-target="#feedback-data" type="button" role="tab">
+                        <i class="bi bi-chat-square-text me-1"></i> Feedback
+                        <span class="badge bg-secondary ms-1">{{ data_feedback|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="model-tab" data-bs-toggle="tab" 
+                            data-bs-target="#model-data" type="button" role="tab">
+                        <i class="bi bi-cpu me-1"></i> Model
+                        <span class="badge bg-secondary ms-1">{{ model_info|length }}</span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="dataTabsContent">
+                <!-- Tab Data Prediksi -->
+                <div class="tab-pane fade show active" id="prediction-data" role="tabpanel">
+                    {% if data_prediksi %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">No</th>
+                                    <th width="25%">Komoditas</th>
+                                    <th width="25%">Tanggal</th>
+                                    <th width="25%">Prediksi</th>
+                                    <th width="20%">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data_prediksi %}
+                                <tr>
+                                    <td class="fw-bold">{{ loop.index }}</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">
+                                            {{ row['komoditas']|upper }}
+                                        </span>
+                                    </td>
+                                    <td>{{ row['tanggal'] }}</td>
+                                    <td>{{ row['nilai_prediksi']|format_currency }}</td>
+                                    <td>
+                                        <form method="post" class="d-inline">
+                                            <input type="hidden" name="file_type" value="prediction">
+                                            <input type="hidden" name="row_id" value="{{ row['id'] }}">
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                    data-name="{{ row['komoditas'] }} pada {{ row['tanggal'] }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                        <div>Tidak ada data prediksi yang tersimpan</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Tab Feedback -->
+                <div class="tab-pane fade" id="feedback-data" role="tabpanel">
+                    {% if data_feedback %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">No</th>
+                                    <th width="20%">User</th>
+                                    <th width="60%">Komentar</th>
+                                    <th width="15%">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data_feedback %}
+                                <tr>
+                                    <td class="fw-bold">{{ loop.index }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">
+                                            {{ row['username'] }}
+                                        </span>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 300px;">
+                                        {{ row['comment'] }}
+                                    </td>
+                                    <td>
+                                        <form method="post" class="d-inline">
+                                            <input type="hidden" name="file_type" value="feedback">
+                                            <input type="hidden" name="row_id" value="{{ row['id'] }}">
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                    data-name="feedback dari {{ row['username'] }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-primary ms-1"
+                                                onclick="showComment('{{ row['username'] }}', `{{ row['comment']|replace("'", "\\'")|replace('"', '\\"') }}`)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                        <div>Belum ada feedback dari pengguna</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Tab Model -->
+                <div class="tab-pane fade" id="model-data" role="tabpanel">
+                    {% if model_info %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="5%">No</th>
+                                    <th width="25%">Nama Model</th>
+                                    <th width="20%">Tanggal Training</th>
+                                    <th width="20%">Rentang Data</th>
+                                    <th width="20%">Akurasi (MAPE)</th>
+                                    <th width="10%">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model in model_info %}
+                                <tr>
+                                    <td class="fw-bold">{{ loop.index }}</td>
+                                    <td>
+                                        <span class="badge bg-success text-white">
+                                            {{ model['filename'] }}
+                                        </span>
+                                        <small class="text-muted d-block">{{ model['size'] }}</small>
+                                    </td>
+                                    <td>
+                                        {% if model['training_date'] != 'Unknown' %}
+                                            {{ model['training_date'] }}
+                                        {% else %}
+                                            <span class="text-muted">Tidak diketahui</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if model['first_date'] != 'Unknown' and model['last_date'] != 'Unknown' %}
+                                            {{ model['first_date'] }} s/d {{ model['last_date'] }}
+                                        {% else %}
+                                            <span class="text-muted">Tidak diketahui</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if model['mape_scores'] %}
+                                            <div class="d-flex flex-column">
+                                                {% for komoditas, score in model['mape_scores'].items() %}
+                                                <span>{{ komoditas }}: <strong>{{ score }}%</strong></span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">Tidak tersedia</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="post" class="d-inline">
+                                            <input type="hidden" name="file_type" value="model">
+                                            <input type="hidden" name="model_name" value="{{ model['filename'] }}">
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                    data-name="model {{ model['filename'] }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info d-flex align-items-center">
+                        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+                        <div>Tidak ada model yang tersimpan</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Details -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Prediksi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="detailModalBody">
+                <!-- Content will be inserted by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // Notification from URL parameters
+    function showNotification() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        const message = urlParams.get('message');
+
+        if (status && message) {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: status,
+                title: message
+            });
+
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+
+    // Delete confirmation
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const form = this.closest('form');
+            const dataName = this.getAttribute('data-name') || 'data ini';
+            
+            Swal.fire({
+                title: 'Yakin ingin menghapus?',
+                html: `<span class="text-danger">${dataName}</span> akan dihapus permanen!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#d33',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+
+    // Show prediction details
+    function showDetail(data) {
+        const modalBody = document.getElementById('detailModalBody');
+        modalBody.innerHTML = `
+            <div class="row mb-3">
+                <div class="col-4 fw-bold">Komoditas:</div>
+                <div class="col-8">${data.komoditas}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-4 fw-bold">Tanggal:</div>
+                <div class="col-8">${data.tanggal}</div>
+            </div>
+            <div class="row">
+                <div class="col-4 fw-bold">Prediksi Harga:</div>
+                <div class="col-8">${parseFloat(data.nilai_prediksi).toLocaleString('id-ID', {style: 'currency', currency: 'IDR'})}</div>
+            </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+        modal.show();
+    }
+
+    // Show full comment
+    function showComment(username, comment) {
+        Swal.fire({
+            title: `Feedback dari ${username}`,
+            html: `<div class="text-start p-3">${comment}</div>`,
+            confirmButtonText: 'Tutup',
+            width: '600px'
+        });
+    }
+
+    // Initialize notification on load
+    document.addEventListener('DOMContentLoaded', showNotification);
+</script>
+
+<style>
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: #495057;
+        border-bottom: 3px solid transparent;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        background-color: transparent;
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+    .badge {
+        font-weight: 500;
+        padding: 5px 8px;
+    }
+    .delete-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .model-accuracy {
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
